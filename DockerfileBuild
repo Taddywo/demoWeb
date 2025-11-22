@@ -1,27 +1,15 @@
-# Kontener z mavenem, który umożliwi zbudowanie aplikacji
-FROM maven:3.8.8-eclipse-temurin-17 AS build
+FROM alpine:3.20 AS build
 
-# Ustawianie workdira w kontenerze
-WORKDIR /app
+WORKDIR /src
 
-# Kopiowanie poma i plików projektu do kontenera
-COPY pom.xml .
-COPY src ./src
+COPY . .
 
-# Budowanie aplikacji (dla naszych celów możemy pominąć testy)
-RUN mvn clean package -DskipTests
+RUN mkdir /dist && cp -r * /dist
 
-# Wybranie lekkiego kontenera linuxowego z openjdk17
-FROM eclipse-temurin:17-jdk-jammy
+FROM nginx:alpine
 
-# Ustawianie workdira w kontenerze
-WORKDIR /app
+WORKDIR /usr/share/nginx/html
 
-# Skopiowanie zbudowanej jarki z kontenera budującego do kontenera uruchamiającego aplikację
-COPY --from=build /app/target/demoWeb-0.0.1-SNAPSHOT.jar /app/demoWeb.jar
+COPY --from=build /dist .
 
-# Wystawienie portu 8080
-EXPOSE 8080
-
-# Uruchomienie aplikacji przy starcie kontenera
-ENTRYPOINT ["java", "-jar", "/app/demoWeb.jar"]
+EXPOSE 80
